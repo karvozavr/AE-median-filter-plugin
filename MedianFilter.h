@@ -19,10 +19,6 @@
 /*                                                                 */
 /*******************************************************************/
 
-/*
-    MEDIAN_FILTER.h
-*/
-
 #pragma once
 
 #ifndef MEDIAN_FILTER_H
@@ -64,7 +60,7 @@ typedef short int            int16;
 
 #define MAJOR_VERSION    1
 #define MINOR_VERSION    0
-#define BUG_VERSION        0
+#define BUG_VERSION      0
 #define STAGE_VERSION    PF_Stage_DEVELOP
 #define BUILD_VERSION    1
 
@@ -72,19 +68,23 @@ typedef short int            int16;
 /* Parameter defaults */
 
 #define MEDIAN_FILTER_SIZE_MIN        1
-#define MEDIAN_FILTER_SIZE_MAX        100
-#define MEDIAN_FILTER_SIZE_DFLT        5
+#define MEDIAN_FILTER_SIZE_MAX        15
+#define MEDIAN_FILTER_SIZE_DFLT       5
 
 enum {
     MEDIAN_FILTER_INPUT = 0,
     MEDIAN_FILTER_SIZE,
-    MEDIAN_FILTER_COLOR,
     MEDIAN_FILTER_NUM_PARAMS
 };
 
 enum {
-    SIZE_DISK_ID = 1
+    SIZE_DISK_ID
 };
+
+typedef struct FilterInputData {
+    PF_LayerDef in_layer;
+    A_u_long window_size;
+} FilterInputData;
 
 extern "C" {
     DllExport

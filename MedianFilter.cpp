@@ -19,28 +19,6 @@
 /*                                                                 */
 /*******************************************************************/
 
-/*    MEDIAN_FILTER.cpp
-
-    This is a compiling husk of a project. Fill it in with interesting
-    pixel processing code.
- 
-    Revision History
-
-    Version        Change                                                    Engineer    Date
-    =======        ======                                                    ========    ======
-    1.0            (seemed like a good idea at the time)                    bbb            6/1/2002
-
-    1.0            Okay, I'm leaving the version at 1.0,                    bbb            2/15/2006
-                for obvious reasons; you're going to
-                copy these files directly! This is the
-                first XCode version, though.
-
-    1.0            Let's simplify this barebones sample                    zal            11/11/2010
-
-    1.0            Added new entry point                                    zal            9/18/2017
-
-*/
-
 #include "MedianFilter.h"
 
 static PF_Err 
@@ -64,9 +42,9 @@ About (
 static PF_Err 
 GlobalSetup (
     PF_InData        *in_data,
-    PF_OutData        *out_data,
-    PF_ParamDef        *params[],
-    PF_LayerDef        *output )
+    PF_OutData       *out_data,
+    PF_ParamDef      *params[],
+    PF_LayerDef      *output )
 {
     out_data->my_version = PF_VERSION(MAJOR_VERSION,
                                       MINOR_VERSION,
@@ -132,55 +110,52 @@ getMedian(
 
 template <typename PF_PixelType>
 static PF_Err
-MedianFilter(
-             PF_InData      *in_data,
-             PF_OutData     *out_data,
-             PF_LayerDef    *in_layer,
-             PF_LayerDef    *out_layer,
-             const A_long   window_size )
+MedianFilterIterator(
+                     void         *refcon,
+                     A_long       xL,
+                     A_long       yL,
+                     PF_PixelType *inP,
+                     PF_PixelType *outP)
 {
     PF_Err err = PF_Err_NONE;
     
-    A_u_short r_window[window_size * window_size];
-    A_u_short g_window[window_size * window_size];
-    A_u_short b_window[window_size * window_size];
-   
-    PF_PixelType *in_pixelP  = NULL;
-    PF_PixelType *out_pixelP = NULL;
+    FilterInputData *input_data = reinterpret_cast<FilterInputData *>(refcon);
     
-    const A_long edgeL = window_size / 2;
     
-    for (A_long x = edgeL; x < in_layer->width - edgeL; ++x) {
-        for (A_long y = edgeL; y < in_layer->height - edgeL; ++y) {
-            A_long i = 0;
-            
-            for (A_long fx = 0; fx < window_size; ++fx) {
-                for (A_long fy = 0; fy < window_size; ++fy) {
-                    in_pixelP  = getPixel<PF_PixelType>(in_layer,
-                                                        x + fx - edgeL,
-                                                        y + fy - edgeL);
+    if (input_data){
+        PF_LayerDef &in_layer = input_data->in_layer;
+        A_u_long window_size = input_data->window_size;
+        
+        A_u_short r_window[window_size * window_size];
+        A_u_short g_window[window_size * window_size];
+        A_u_short b_window[window_size * window_size];
+        
+        const A_long edgeL = window_size / 2;
+        
+        A_u_long x, y;
+        
+        A_u_long i = 0;
+        for (A_long fx = 0; fx < window_size; ++fx) {
+            for (A_long fy = 0; fy < window_size; ++fy) {
+                x = xL + fx - edgeL;
+                y = yL + fy - edgeL;
+                if (x > edgeL && x < in_layer.width - edgeL && y > edgeL && y < in_layer.height - edgeL) {
+                    inP  = getPixel<PF_PixelType>(&in_layer,
+                                                  x,
+                                                  y);
                     
-                    r_window[i] = in_pixelP->red;
-                    g_window[i] = in_pixelP->green;
-                    b_window[i] = in_pixelP->blue;
-                    
+                    r_window[i] = inP->red;
+                    g_window[i] = inP->green;
+                    b_window[i] = inP->blue;
                     ++i;
                 }
             }
-            
-            out_pixelP = getPixel<PF_PixelType>(out_layer,
-                                                x,
-                                                y);
-            
-            in_pixelP  = getPixel<PF_PixelType>(in_layer,
-                                                x,
-                                                y);
-            
-            out_pixelP->red   = getMedian(r_window, window_size * window_size);
-            out_pixelP->green = getMedian(g_window, window_size * window_size);
-            out_pixelP->blue  = getMedian(b_window, window_size * window_size);
-            out_pixelP->alpha = in_pixelP->alpha;
         }
+        
+        outP->red   = getMedian(r_window, i);
+        outP->green = getMedian(g_window, i);
+        outP->blue  = getMedian(b_window, i);
+        outP->alpha = inP->alpha;
     }
     
     return err;
@@ -200,21 +175,31 @@ Render (
     A_u_long filter_size = static_cast<A_u_long>(params[MEDIAN_FILTER_SIZE]->u.fs_d.value);
     PF_LayerDef in_layer = params[MEDIAN_FILTER_INPUT]->u.ld;
     
+    FilterInputData input_data;
+    AEFX_CLR_STRUCT(input_data);
+    input_data.in_layer = in_layer;
+    input_data.window_size = filter_size;
+    A_u_long linesL = output->extent_hint.bottom - output->extent_hint.top;
+    
     if (PF_WORLD_IS_DEEP(output)) {
-        ERR(MedianFilter<PF_Pixel8>(in_data,
-                                    out_data,
-                                    &in_layer,
-                                    output,
-                                    filter_size));
+        ERR(suites.Iterate16Suite1()->iterate(in_data,
+                                              0,
+                                              linesL,
+                                              &in_layer,
+                                              NULL,
+                                              (void*)&input_data,
+                                              MedianFilterIterator<PF_Pixel16>,
+                                              output));
     } else {
-        ERR(MedianFilter<PF_Pixel16>(in_data,
-                                     out_data,
-                                     &in_layer,
-                                     output,
-                                     filter_size));
+        ERR(suites.Iterate8Suite1()->iterate(in_data,
+                                              0,
+                                              linesL,
+                                              &in_layer,
+                                              NULL,
+                                              (void*)&input_data,
+                                              MedianFilterIterator<PF_Pixel8>,
+                                              output));
     }
-    
-    
     
     return err;
 }
