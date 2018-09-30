@@ -22,21 +22,19 @@
 #include "MedianFilter.h"
 
 typedef struct {
-	A_u_long	index;
-	A_char		str[256];
+    A_u_long    index;
+    A_char      str[256];
 } TableString;
 
-
-TableString		g_strs[StrID_NUMTYPES] = {
+TableString g_strs[StrID_NUMTYPES] = {
 	StrID_NONE,						"",
 	StrID_Name,						"Median filter",
 	StrID_Description,				"Median filter effect (C) Dmitrii Abramov.",
-	StrID_Size_Param_Name,			"Filter size",
-	StrID_Color_Param_Name,			"Color",
+	StrID_Size_Param_Name,			"Filter size"
 };
 
-
-char	*GetStringPtr(int strNum)
+char *
+GetStringPtr(int strNum)
 {
 	return g_strs[strNum].str;
 }

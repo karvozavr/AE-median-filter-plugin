@@ -20,7 +20,7 @@
 /*******************************************************************/
 
 /*
-	MEDIAN_FILTER.h
+    MEDIAN_FILTER.h
 */
 
 #pragma once
@@ -28,22 +28,21 @@
 #ifndef MEDIAN_FILTER_H
 #define MEDIAN_FILTER_H
 
-typedef unsigned char		u_char;
-typedef unsigned short		u_short;
-typedef unsigned short		u_int16;
-typedef unsigned long		u_long;
-typedef short int			int16;
-#define PF_TABLE_BITS	12
-#define PF_TABLE_SZ_16	4096
+typedef unsigned char        u_char;
+typedef unsigned short       u_short;
+typedef unsigned short       u_int16;
+typedef unsigned long        u_long;
+typedef short int            int16;
+#define PF_TABLE_BITS    12
+#define PF_TABLE_SZ_16    4096
 
-#define PF_DEEP_COLOR_AWARE 1	// make sure we get 16bpc pixels; 
-								// AE_Effect.h checks for this.
+#define PF_DEEP_COLOR_AWARE 1    // make sure we get 16bpc pixels;
 
 #include "AEConfig.h"
 
 #ifdef AE_OS_WIN
-	typedef unsigned short PixelType;
-	#include <Windows.h>
+    typedef unsigned short PixelType;
+    #include <Windows.h>
 #endif
 
 #include "entry.h"
@@ -63,47 +62,40 @@ typedef short int			int16;
 
 /* Versioning information */
 
-#define	MAJOR_VERSION	1
-#define	MINOR_VERSION	0
-#define	BUG_VERSION		0
-#define	STAGE_VERSION	PF_Stage_DEVELOP
-#define	BUILD_VERSION	1
+#define MAJOR_VERSION    1
+#define MINOR_VERSION    0
+#define BUG_VERSION        0
+#define STAGE_VERSION    PF_Stage_DEVELOP
+#define BUILD_VERSION    1
 
 
 /* Parameter defaults */
 
-#define	MEDIAN_FILTER_SIZE_MIN		1
-#define	MEDIAN_FILTER_SIZE_MAX		100
-#define	MEDIAN_FILTER_SIZE_DFLT		5
+#define MEDIAN_FILTER_SIZE_MIN        1
+#define MEDIAN_FILTER_SIZE_MAX        100
+#define MEDIAN_FILTER_SIZE_DFLT        5
 
 enum {
-	MEDIAN_FILTER_INPUT = 0,
-	MEDIAN_FILTER_SIZE,
-	MEDIAN_FILTER_COLOR,
-	MEDIAN_FILTER_NUM_PARAMS
+    MEDIAN_FILTER_INPUT = 0,
+    MEDIAN_FILTER_SIZE,
+    MEDIAN_FILTER_COLOR,
+    MEDIAN_FILTER_NUM_PARAMS
 };
 
 enum {
-	SIZE_DISK_ID = 1,
-	COLOR_DISK_ID,
+    SIZE_DISK_ID = 1
 };
-
-typedef struct FilterInfo {
-	PF_FpLong	size;
-} FilterInfo, *FilterInfoP, **FilterInfoH;
 
 extern "C" {
-
     DllExport
     PF_Err
     EffectMain(
-               PF_Cmd			cmd,
-               PF_InData		*in_data,
-               PF_OutData		*out_data,
-               PF_ParamDef		*params[],
-               PF_LayerDef		*output,
-               void			    *extra );
-
+               PF_Cmd       cmd,
+               PF_InData    *in_data,
+               PF_OutData   *out_data,
+               PF_ParamDef  *params[],
+               PF_LayerDef  *output,
+               void         *extra );
 }
 
 #endif // MEDIAN_FILTER_H

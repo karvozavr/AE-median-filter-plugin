@@ -19,100 +19,92 @@
 /*                                                                 */
 /*******************************************************************/
 
-/*	MEDIAN_FILTER.cpp
+/*    MEDIAN_FILTER.cpp
 
-	This is a compiling husk of a project. Fill it in with interesting
-	pixel processing code.
-	
-	Revision History
+    This is a compiling husk of a project. Fill it in with interesting
+    pixel processing code.
+ 
+    Revision History
 
-	Version		Change													Engineer	Date
-	=======		======													========	======
-	1.0			(seemed like a good idea at the time)					bbb			6/1/2002
+    Version        Change                                                    Engineer    Date
+    =======        ======                                                    ========    ======
+    1.0            (seemed like a good idea at the time)                    bbb            6/1/2002
 
-	1.0			Okay, I'm leaving the version at 1.0,					bbb			2/15/2006
-				for obvious reasons; you're going to 
-				copy these files directly! This is the
-				first XCode version, though.
+    1.0            Okay, I'm leaving the version at 1.0,                    bbb            2/15/2006
+                for obvious reasons; you're going to
+                copy these files directly! This is the
+                first XCode version, though.
 
-	1.0			Let's simplify this barebones sample					zal			11/11/2010
+    1.0            Let's simplify this barebones sample                    zal            11/11/2010
 
-	1.0			Added new entry point									zal			9/18/2017
+    1.0            Added new entry point                                    zal            9/18/2017
 
 */
 
 #include "MedianFilter.h"
 
 static PF_Err 
-About (	
-	PF_InData		*in_data,
-	PF_OutData		*out_data,
-	PF_ParamDef		*params[],
-	PF_LayerDef		*output )
+About (
+    PF_InData        *in_data,
+    PF_OutData       *out_data,
+    PF_ParamDef      *params[],
+    PF_LayerDef      *output )
 {
-	AEGP_SuiteHandler suites(in_data->pica_basicP);
-	
-	suites.ANSICallbacksSuite1()->sprintf(	out_data->return_msg,
-											"%s v%d.%d\r%s",
-											STR(StrID_Name), 
-											MAJOR_VERSION, 
-											MINOR_VERSION, 
-											STR(StrID_Description));
-	return PF_Err_NONE;
+    AEGP_SuiteHandler suites(in_data->pica_basicP);
+    
+    suites.ANSICallbacksSuite1()->sprintf(  out_data->return_msg,
+                                            "%s v%d.%d\r%s",
+                                            STR(StrID_Name),
+                                            MAJOR_VERSION,
+                                            MINOR_VERSION,
+                                            STR(StrID_Description));
+    return PF_Err_NONE;
 }
 
 static PF_Err 
-GlobalSetup (	
-	PF_InData		*in_data,
-	PF_OutData		*out_data,
-	PF_ParamDef		*params[],
-	PF_LayerDef		*output )
+GlobalSetup (
+    PF_InData        *in_data,
+    PF_OutData        *out_data,
+    PF_ParamDef        *params[],
+    PF_LayerDef        *output )
 {
-	out_data->my_version = PF_VERSION(MAJOR_VERSION,
+    out_data->my_version = PF_VERSION(MAJOR_VERSION,
                                       MINOR_VERSION,
                                       BUG_VERSION,
                                       STAGE_VERSION,
                                       BUILD_VERSION);
 
-	out_data->out_flags =  PF_OutFlag_DEEP_COLOR_AWARE;	// just 16bpc, not 32bpc
-	
-	return PF_Err_NONE;
+    out_data->out_flags =  PF_OutFlag_DEEP_COLOR_AWARE;    // just 16bpc, not 32bpc
+    
+    return PF_Err_NONE;
 }
 
 static PF_Err 
-ParamsSetup (	
-	PF_InData		*in_data,
-	PF_OutData		*out_data,
-	PF_ParamDef		*params[],
-	PF_LayerDef		*output )
+ParamsSetup (
+    PF_InData        *in_data,
+    PF_OutData        *out_data,
+    PF_ParamDef        *params[],
+    PF_LayerDef        *output )
 {
-	PF_Err		err	= PF_Err_NONE;
-	PF_ParamDef	def;	
+    PF_Err        err    = PF_Err_NONE;
+    PF_ParamDef    def;
 
-	AEFX_CLR_STRUCT(def);
+    AEFX_CLR_STRUCT(def);
 
-	PF_ADD_FLOAT_SLIDERX(STR(StrID_Size_Param_Name),
+    PF_ADD_FLOAT_SLIDERX(STR(StrID_Size_Param_Name),
                          MEDIAN_FILTER_SIZE_MIN,
                          MEDIAN_FILTER_SIZE_MAX,
                          MEDIAN_FILTER_SIZE_MIN,
                          MEDIAN_FILTER_SIZE_MAX,
                          MEDIAN_FILTER_SIZE_DFLT,
-                         PF_Precision_HUNDREDTHS,
+                         PF_Precision_INTEGER,
                          0,
                          0,
                          SIZE_DISK_ID);
+    
+    out_data->num_params = MEDIAN_FILTER_NUM_PARAMS;
 
-	AEFX_CLR_STRUCT(def);
-
-    PF_ADD_COLOR(STR(StrID_Color_Param_Name),
-                 PF_HALF_CHAN8,
-                 PF_MAX_CHAN8,
-                 PF_MAX_CHAN8,
-                 COLOR_DISK_ID);
-	
-	out_data->num_params = MEDIAN_FILTER_NUM_PARAMS;
-
-	return err;
+    return err;
 }
 
 template <typename PF_PixelType>
@@ -149,9 +141,9 @@ MedianFilter(
 {
     PF_Err err = PF_Err_NONE;
     
-    A_u_char r_window[window_size * window_size];
-    A_u_char g_window[window_size * window_size];
-    A_u_char b_window[window_size * window_size];
+    A_u_short r_window[window_size * window_size];
+    A_u_short g_window[window_size * window_size];
+    A_u_short b_window[window_size * window_size];
    
     PF_PixelType *in_pixelP  = NULL;
     PF_PixelType *out_pixelP = NULL;
@@ -205,10 +197,7 @@ Render (
     AEGP_SuiteHandler    suites(in_data->pica_basicP);
     
     /*    Put interesting code here. */
-    FilterInfo filter_info;
-    AEFX_CLR_STRUCT(filter_info);
-    
-    filter_info.size     = params[MEDIAN_FILTER_SIZE]->u.fs_d.value;
+    A_u_long filter_size = static_cast<A_u_long>(params[MEDIAN_FILTER_SIZE]->u.fs_d.value);
     PF_LayerDef in_layer = params[MEDIAN_FILTER_INPUT]->u.ld;
     
     if (PF_WORLD_IS_DEEP(output)) {
@@ -216,13 +205,13 @@ Render (
                                     out_data,
                                     &in_layer,
                                     output,
-                                    filter_info.size));
+                                    filter_size));
     } else {
         ERR(MedianFilter<PF_Pixel16>(in_data,
                                      out_data,
                                      &in_layer,
                                      output,
-                                     filter_info.size));
+                                     filter_size));
     }
     
     
@@ -233,75 +222,75 @@ Render (
 
 extern "C" DllExport
 PF_Err PluginDataEntryFunction(
-	PF_PluginDataPtr inPtr,
-	PF_PluginDataCB inPluginDataCallBackPtr,
-	SPBasicSuite* inSPBasicSuitePtr,
-	const char* inHostName,
-	const char* inHostVersion)
+    PF_PluginDataPtr inPtr,
+    PF_PluginDataCB  inPluginDataCallBackPtr,
+    SPBasicSuite     *inSPBasicSuitePtr,
+    const char       *inHostName,
+    const char       *inHostVersion )
 {
-	PF_Err result = PF_Err_INVALID_CALLBACK;
+    PF_Err result = PF_Err_INVALID_CALLBACK;
 
-	result = PF_REGISTER_EFFECT(
-		inPtr,
-		inPluginDataCallBackPtr,
-		"MEDIAN_FILTER", // Name
-		"ADBE MEDIAN_FILTER", // Match Name
-		"Abramov plugins", // Category
-		AE_RESERVED_INFO); // Reserved Info
+    result = PF_REGISTER_EFFECT(
+        inPtr,
+        inPluginDataCallBackPtr,
+        "MEDIAN_FILTER", // Name
+        "ADBE MEDIAN_FILTER", // Match Name
+        "Abramov plugins", // Category
+        AE_RESERVED_INFO); // Reserved Info
 
-	return result;
+    return result;
 }
 
 
 PF_Err
 EffectMain(
-	PF_Cmd			cmd,
-	PF_InData		*in_data,
-	PF_OutData		*out_data,
-	PF_ParamDef		*params[],
-	PF_LayerDef		*output,
-	void			*extra)
+    PF_Cmd          cmd,
+    PF_InData       *in_data,
+    PF_OutData      *out_data,
+    PF_ParamDef     *params[],
+    PF_LayerDef     *output,
+    void            *extra)
 {
-	PF_Err		err = PF_Err_NONE;
-	
-	try {
-		switch (cmd) {
-			case PF_Cmd_ABOUT:
+    PF_Err        err = PF_Err_NONE;
+    
+    try {
+        switch (cmd) {
+            case PF_Cmd_ABOUT:
 
-				err = About(in_data,
-							out_data,
-							params,
-							output);
-				break;
-				
-			case PF_Cmd_GLOBAL_SETUP:
+                err = About(in_data,
+                            out_data,
+                            params,
+                            output);
+                break;
+                
+            case PF_Cmd_GLOBAL_SETUP:
 
-				err = GlobalSetup(	in_data,
-									out_data,
-									params,
-									output);
-				break;
-				
-			case PF_Cmd_PARAMS_SETUP:
+                err = GlobalSetup(in_data,
+                                  out_data,
+                                  params,
+                                  output);
+                break;
+                
+            case PF_Cmd_PARAMS_SETUP:
 
-				err = ParamsSetup(	in_data,
-									out_data,
-									params,
-									output);
-				break;
-				
-			case PF_Cmd_RENDER:
+                err = ParamsSetup(in_data,
+                                  out_data,
+                                  params,
+                                  output);
+                break;
+                
+            case PF_Cmd_RENDER:
 
-				err = Render(	in_data,
-								out_data,
-								params,
-								output);
-				break;
-		}
-	}
-	catch(PF_Err &thrown_err){
-		err = thrown_err;
-	}
-	return err;
+                err = Render(in_data,
+                             out_data,
+                             params,
+                             output);
+                break;
+        }
+    }
+    catch(PF_Err &thrown_err){
+        err = thrown_err;
+    }
+    return err;
 }
 
